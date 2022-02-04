@@ -1,7 +1,7 @@
 # Declare of the Provider in main.tf
 # This is create a Windows Server VM and install IIS
 # Updated 2022.01.29 limgong
-/*
+
 terraform {
   required_providers {
     azurerm = {
@@ -35,13 +35,13 @@ resource "azurerm_virtual_network" "example-vnet" {
   }
 }
 
-resource "azurerm_subnet" "example-subnet" {
+resource "azurerm_subnet" "ggSubnet02" {
   name                 = "internal"
   resource_group_name  = azurerm_resource_group.ggResourcegroup.name
   virtual_network_name = azurerm_virtual_network.example-vnet.name
   address_prefixes     = ["10.0.90.0/26"]
 }
-*/
+
 
 # Create public IPs
 resource "azurerm_public_ip" "ggPublicIP02" {
@@ -63,7 +63,7 @@ resource "azurerm_network_interface" "ggNic02" {
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.ggSubnet01.id
+    subnet_id                     = azurerm_subnet.ggSubnet02.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.ggPublicIP02.id
   }
