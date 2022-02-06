@@ -1,0 +1,79 @@
+Enable Calico in AKS managed Kubernetes service.
+*https://docs.microsoft.com/en-us/azure/aks/use-network-policies  AKS 클러스터 생성 및 네트워크 정책 활성화 - 네트워크 정책 기능은 클러스터가 생성될 때만 활성화할 수 있습니다.
+Azure 네트워크 정책을 사용하려면 Azure CNI 플러그인을 사용하고 고유한 가상 네트워크 및 서브넷을 정의해야 합니다.
+
+다음 예제 스크립트:
+1)가상 네트워크 및 서브넷을 만듭니다.
+2)AKS 클러스터와 함께 사용할 Azure AD(Azure Active Directory) 서비스 주체를 만듭니다. 없어도 aks 생성할 수 있다.
+가상 네트워크에서 AKS 클러스터 서비스 주체에 대한 기여자 권한을 할당 합니다.
+3)정의된 가상 네트워크에 AKS 클러스터를 만들고 네트워크 정책을 사용하도록 설정합니다.
+4)애저 네트워크 정책 옵션이 사용됩니다. 대신 Calico를 네트워크 정책 옵션으로 사용하려면 --network-policy calico매개변수를 사용하십시오 . 
+---------------------------------------------------------------------------------------
+RESOURCE_GROUP_NAME=myResourceGroup-NP
+CLUSTER_NAME=myAKSCluster
+LOCATION=canadaeast
+
+# Create a resource group
+az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+
+# Create a virtual network and subnet
+az network vnet create \
+    --resource-group $RESOURCE_GROUP_NAME \
+    --name myVnet \
+    --address-prefixes 10.0.0.0/8 \   <-- 10.0.0.0/16
+    --subnet-name myAKSSubnet \
+    --subnet-prefix 10.240.0.0/16      <-- 10.0.0.0/22
+
+# Create a service principal and read in the application ID
+SP=$(az ad sp create-for-rbac --role Contributor --output json)
+SP_ID=$(echo $SP | jq -r .appId)
+SP_PASSWORD=$(echo $SP | jq -r .password)
+
+# Wait 15 seconds to make sure that service principal has propagated
+echo "Waiting for service principal to propagate..."
+sleep 15
+
+# Get the virtual network resource ID
+VNET_ID=$(az network vnet show --resource-group $RESOURCE_GROUP_NAME --name myVnet --query id -o tsv)
+
+# Assign the service principal Contributor permissions to the virtual network resource
+az role assignment create --assignee $SP_ID --scope $VNET_ID --role Contributor
+
+# Get the virtual network subnet resource ID
+SUBNET_ID=$(az network vnet subnet show --resource-group $RESOURCE_GROUP_NAME --vnet-name myVnet --name myAKSSubnet --query id -o tsv)
+
+az aks create \
+    --resource-group $RESOURCE_GROUP_NAME \
+    --name $CLUSTER_NAME \
+    --node-count 1 \
+    --generate-ssh-keys \
+    --service-cidr 10.0.0.0/16 \   <-- 위에서 생성한 서브넷과 달라야 한다.
+    --dns-service-ip 10.0.0.10 \
+    --docker-bridge-address 172.17.0.1/16 \   <-- 기본
+    --vnet-subnet-id $SUBNET_ID \
+    --service-principal $SP_ID \
+    --client-secret $SP_PASSWORD \
+    --vm-set-type VirtualMachineScaleSets \    <-- 옵션
+    --kubernetes-version 1.20.2 \                   <-- 옵션(기본은 azure지원버전 자동할당)
+    --network-plugin azure \
+    --network-policy azure    <--- 네트워크 정책 적용(Azure 또는 Calico)
+
+별도의 노드풀을 생성하려는 경우(예: 윈도우서버)
+az aks nodepool add \
+    --resource-group $RESOURCE_GROUP_NAME \
+    --cluster-name $CLUSTER_NAME \
+    --os-type Windows \
+    --name npwin \
+    --node-count 1
+
+az aks get-credentials --resource-group $RESOURCE_GROUP_NAME --name $CLUSTER_NAME
+
+az feature register --namespace "Microsoft.ContainerService" --name "EnableAKSWindowsCalico"
+
+az provider register --namespace Microsoft.ContainerService
+
+정의된 네임스페이스 내에서만 트래픽 허용인 경우, 먼저 namespace를 생성후 app 레이블을 정의한다.
+kubectl create namespace production
+kubectl label namespace/production purpose=production
+
+kubectl run --rm -it frontend --image=mcr.microsoft.com/aks/fundamental/base-ubuntu:v0.0.11 --labels app=webapp,role=frontend --namespace production
