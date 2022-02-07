@@ -1,5 +1,6 @@
 #Reference : https://faun.pub/build-an-azure-application-gateway-with-terraform-8264fbd5fa42
 #Updated at 2022.02.05
+#appgw with key vault
 ############### 진행중  ########################
 
 resource "azurerm_resource_group" "example" {

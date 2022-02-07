@@ -1,6 +1,6 @@
 # Configure the Microsoft Azure Provider
 # Create Vnet and Vnet peering
-# Create VM on Azure Infra and ~~~      Naming Rule is "Resource Name-region-seperate-seq"
+# Create VM(windows, linux) on Azure Infra(hub-spoke) and ~~~      Naming Rule is "Resource Name-region-seperate-seq"
 # 2022.01.03 limgong
 
 # Declare of the Provider
