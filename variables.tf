@@ -38,7 +38,7 @@ variable "spoke1_vnet" {
 
 variable "admin_username" {
   description = "administrator name for created VM"
-  default     = "ggadmin"
+  default     = "admin"
 }
 
 variable "admin_password" {
