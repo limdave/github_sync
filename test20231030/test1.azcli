@@ -1,0 +1,2 @@
+az vm list -o table
+az vm image list --offer rocky --sku free
