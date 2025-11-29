@@ -24,7 +24,7 @@ param ubuntu2404Image object = {
   version: 'latest'
 }
 
-module vnet 'avm/res/network/virtualnetwork:1.0.0' = {
+module vnet 'br/public:avm/res/network/virtualnetwork:1.0.0' = {
   name: '${vmName}-VnetDeployment'
   params: {
     name: 'vnet-worker01'
@@ -47,7 +47,7 @@ module vnet 'avm/res/network/virtualnetwork:1.0.0' = {
   }
 }
 
-module nic 'avm/res/network/networkinterface:1.0.0' = {
+module nic 'br/public:avm/res/network/networkinterface:1.0.0' = {
   name: '${vmName}-NicDeployment'
   params: {
     name: '${vmName}-nic'
