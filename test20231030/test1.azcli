@@ -1,2 +1,32 @@
 az vm list -o table
 az vm image list --offer rocky --sku free
+
+az vm list -o table
+az vm image list --offer rocky --sku free
+
+# Azure VM 생성하기
+# 리소스 그룹 생성
+az group create --name myResourceGroup --location koreacentral
+
+# VM 생성 (Rocky Linux 사용)
+az vm create \
+  --resource-group myResourceGroup \
+  --name myVM \
+  --image Rocky:RHEL:free:latest \
+  --size Standard_B1s \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --public-ip-sku Standard
+
+# VM 상태 확인
+az vm show --resource-group myResourceGroup --name myVM -d
+
+# VM에 접속하기 (SSH를 통해)
+# ssh azureuser@<public-ip-address>
+
+# VM 중지/시작
+# az vm deallocate --resource-group myResourceGroup --name myVM
+# az vm start --resource-group myResourceGroup --name myVM
+
+# VM 삭제
+# az vm delete --resource-group myResourceGroup --name myVM --yes
